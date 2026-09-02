@@ -27,3 +27,24 @@ npm run site:build
 - `npm run build` - Production build
 - `npm run site:build` - One-command guided website generation workflow
 
+## Browser automation
+
+`.claude/hooks/session-start.sh` runs on every Claude Code session start. It
+installs `@playwright/cli` globally if it is missing and writes
+`.playwright/cli.config.json`, so `playwright-cli` is ready without any manual
+setup:
+
+```bash
+npm run dev                      # in one shell
+playwright-cli open http://localhost:5173
+playwright-cli snapshot
+playwright-cli screenshot
+playwright-cli close
+```
+
+In Claude Code on the web the hook pins the container's pre-installed Chromium
+(`/opt/pw-browsers/chromium`) and disables the Chromium sandbox, because browser
+downloads are blocked by the network policy and the container runs as root. On a
+local machine it writes an empty config and lets Playwright resolve its own
+browsers — run `playwright-cli install-browser` once if you have none.
+
