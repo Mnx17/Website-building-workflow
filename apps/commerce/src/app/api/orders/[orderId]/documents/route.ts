@@ -1,4 +1,3 @@
-import { timingSafeEqual } from 'node:crypto';
 import { getSql } from '@/lib/db';
 import { uuidSchema } from '@/lib/contracts';
 import { loadOrderView } from '@/lib/repositories/orders';
@@ -6,6 +5,7 @@ import { buildInvoice, buildPackingSlip, DocumentError } from '@/lib/documents/m
 import { renderInvoice, renderPackingSlip } from '@/lib/documents/render';
 import { isLocale } from '@/lib/i18n';
 import { jsonResponse } from '@/lib/http';
+import { sessionForOrder } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -13,15 +13,16 @@ export const dynamic = 'force-dynamic';
 /**
  * Fulfilment documents.
  *
- * Access control is a shared staff token, because P1–P3 have no auth yet. That
- * is a deliberate stopgap and a known gap: when Supabase Auth lands in P4 this
- * must become a role check (`has_role('{admin,fulfillment}')`) plus
- * buyer-owns-order, and the token goes away.
+ * Two kinds of caller are allowed: staff (any role — fulfilment needs the
+ * packing slip), and the buyer for their own order. Nobody else, and there is
+ * no unauthenticated path.
  *
- * The invoice is the sensitive one — it is the document that reveals what the
- * sender paid. Both are gated, but note the asymmetry: a leaked packing-slip
- * URL exposes a name and address; a leaked invoice URL also exposes prices,
- * which is precisely what the gifting feature promises to hide.
+ * The invoice is the sensitive one: a leaked packing-slip URL exposes a name
+ * and address, while a leaked invoice URL also exposes prices — precisely what
+ * the gifting feature promises to hide. Hence the extra rule below: a buyer
+ * gets their own invoice, but only staff get a packing slip, because the slip
+ * carries the recipient's address and the buyer is not always the person who
+ * should be able to re-fetch it at will.
  */
 export async function GET(
   request: Request,
@@ -32,7 +33,8 @@ export async function GET(
     return jsonResponse({ error: 'BAD_ORDER_ID' }, { status: 400 });
   }
 
-  if (!isAuthorisedStaff(request)) {
+  const caller = await sessionForOrder(getSql(), request, orderId);
+  if (!caller) {
     return jsonResponse({ error: 'FORBIDDEN' }, { status: 403 });
   }
 
@@ -40,6 +42,10 @@ export async function GET(
   const type = url.searchParams.get('type') ?? 'invoice';
   const localeParam = url.searchParams.get('locale') ?? 'en';
   const locale = isLocale(localeParam) ? localeParam : 'en';
+
+  if (type === 'packing_slip' && caller.kind !== 'staff') {
+    return jsonResponse({ error: 'STAFF_ONLY' }, { status: 403 });
+  }
 
   const order = await loadOrderView(getSql(), orderId);
   if (!order) {
@@ -66,15 +72,4 @@ export async function GET(
     console.error('[documents] render failed', error);
     return jsonResponse({ error: 'INTERNAL' }, { status: 500 });
   }
-}
-
-function isAuthorisedStaff(request: Request): boolean {
-  const expected = process.env['STAFF_API_TOKEN'];
-  // Fail closed: no token configured means nobody gets documents.
-  if (!expected) return false;
-
-  const provided = request.headers.get('x-staff-token') ?? '';
-  const a = Buffer.from(provided);
-  const b = Buffer.from(expected);
-  return a.length === b.length && timingSafeEqual(a, b);
 }

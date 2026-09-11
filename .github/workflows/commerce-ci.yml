@@ -38,7 +38,8 @@ jobs:
       # without merchant credentials.
       PAYMENT_PROVIDER: mock
       MOCK_WEBHOOK_SECRET: mock-webhook-secret
-      STAFF_API_TOKEN: test-staff-token
+      # Admin routes verify HS256 JWTs against this; the suites mint their own.
+      SUPABASE_JWT_SECRET: test-jwt-secret-for-ci
 
     steps:
       - uses: actions/checkout@v4

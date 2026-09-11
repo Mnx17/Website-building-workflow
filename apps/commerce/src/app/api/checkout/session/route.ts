@@ -4,6 +4,7 @@ import { createOrderFromCart } from '@/lib/repositories/orders';
 import { getPaymentProvider } from '@/lib/payments';
 import { errorResponse, validationResponse } from '@/lib/errors';
 import { jsonResponse, readJson } from '@/lib/http';
+import { enforceRateLimit } from '@/lib/rate-limit';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -30,6 +31,12 @@ export async function POST(request: Request): Promise<Response> {
 
   try {
     const sql = getSql();
+
+    // Keyed on the cart, not the IP: a shopper behind CGNAT is not a hundred
+    // shoppers, and this still bounds repeated checkout attempts per cart.
+    const limited = await enforceRateLimit(sql, 'checkout', request, cart_id);
+    if (limited) return limited;
+
     const order = await createOrderFromCart(sql, {
       cartId: cart_id,
       governorate,

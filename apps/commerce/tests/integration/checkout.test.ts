@@ -5,6 +5,7 @@
  * functions over `Request`, so this exercises the real routing code (signature
  * check, replay guard, transaction boundaries) without booting a server.
  */
+import { createHmac } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type postgres from 'postgres';
 import { getSql, closeSql } from '@/lib/db';
@@ -23,7 +24,20 @@ const suite = DATABASE_URL ? describe : describe.skip;
 const BOX = '22222222-0000-4000-8000-000000000001';
 const ORANGE = '11111111-0000-4000-8000-000000000001';
 const CHOCOLATE = '11111111-0000-4000-8000-000000000003';
-const STAFF_TOKEN = 'test-staff-token';
+const JWT_SECRET = 'test-jwt-secret-for-checkout-suite';
+const STAFF_ID = '00000000-0000-4000-8000-0000000000b1';
+const OUTSIDER_ID = '00000000-0000-4000-8000-0000000000b2';
+
+function jwt(sub: string): string {
+  const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
+  const payload = Buffer.from(
+    JSON.stringify({ sub, exp: Math.floor(Date.now() / 1000) + 3600 }),
+  ).toString('base64url');
+  const signature = createHmac('sha256', JWT_SECRET)
+    .update(`${header}.${payload}`)
+    .digest('base64url');
+  return `${header}.${payload}.${signature}`;
+}
 
 const SLOT_MAP = [
   { slot_index: 0, raw_material_id: ORANGE },
@@ -37,13 +51,28 @@ let sql: postgres.Sql;
 beforeAll(() => {
   process.env['PAYMENT_PROVIDER'] = 'mock';
   process.env['MOCK_WEBHOOK_SECRET'] = MOCK_SECRET;
-  process.env['STAFF_API_TOKEN'] = STAFF_TOKEN;
+  process.env['SUPABASE_JWT_SECRET'] = JWT_SECRET;
   sql = getSql();
 });
 
 afterAll(async () => {
   await closeSql();
 });
+
+async function seedStaff(): Promise<void> {
+  await sql`
+    insert into auth.users (id, email) values (${STAFF_ID}, 'fulfilment@example.com')
+    on conflict (id) do nothing
+  `;
+  await sql`
+    insert into staff_users (user_id, role) values (${STAFF_ID}, 'fulfillment')
+    on conflict (user_id) do update set role = excluded.role
+  `;
+  await sql`
+    insert into auth.users (id, email) values (${OUTSIDER_ID}, 'buyer@example.com')
+    on conflict (id) do nothing
+  `;
+}
 
 async function cartWithBox(qty = 1): Promise<string> {
   const cart = await createCart(sql, { anonToken: crypto.randomUUID() });
@@ -306,6 +335,10 @@ suite('checkout and payment', () => {
 });
 
 suite('fulfilment documents', () => {
+  beforeAll(async () => {
+    await seedStaff();
+  });
+
   async function giftOrder(): Promise<string> {
     const cartId = await cartWithBox(1);
     const response = await checkoutRoute(
@@ -326,9 +359,9 @@ suite('fulfilment documents', () => {
     return order_id;
   }
 
-  function documentsRequest(orderId: string, query: string, token = STAFF_TOKEN): Request {
+  function documentsRequest(orderId: string, query: string, as: string | null = STAFF_ID): Request {
     return new Request(`http://localhost/api/orders/${orderId}/documents?${query}`, {
-      headers: { 'x-staff-token': token },
+      headers: as ? { authorization: `Bearer ${jwt(as)}` } : {},
     });
   }
 
@@ -363,11 +396,35 @@ suite('fulfilment documents', () => {
     expect(html).toMatch(/\d+\.\d{3}/);
   });
 
-  it('refuses without the staff token', async () => {
+  it('refuses an unauthenticated request', async () => {
+    const orderId = await giftOrder();
+    const response = await documentsRoute(documentsRequest(orderId, 'type=invoice', null), {
+      params: Promise.resolve({ orderId }),
+    });
+    expect(response.status).toBe(403);
+  });
+
+  it('refuses a signed-in user who is neither staff nor the buyer', async () => {
     const orderId = await giftOrder();
     const response = await documentsRoute(
-      documentsRequest(orderId, 'type=invoice', 'wrong-token'),
+      documentsRequest(orderId, 'type=invoice', OUTSIDER_ID),
       { params: Promise.resolve({ orderId }) },
+    );
+    expect(response.status).toBe(403);
+  });
+
+  it('never gives a non-staff caller a packing slip, even for their own order', async () => {
+    // The slip carries the recipient's address; staff handle it, not the buyer.
+    const cartId = await cartWithBox(1);
+    const checkout = await checkoutRoute(
+      checkoutRequest({ cart_id: cartId, governorate: 'Muscat', payment_method: 'card' }),
+    );
+    const { order_id } = (await checkout.json()) as { order_id: string };
+    await sql`update orders set user_id = ${OUTSIDER_ID} where id = ${order_id}`;
+
+    const response = await documentsRoute(
+      documentsRequest(order_id, 'type=packing_slip', OUTSIDER_ID),
+      { params: Promise.resolve({ orderId: order_id }) },
     );
     expect(response.status).toBe(403);
   });

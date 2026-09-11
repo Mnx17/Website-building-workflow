@@ -109,9 +109,15 @@ export async function POST(
 
   if (commitResult === 'reservation_lost') {
     // The hold lapsed before payment landed. The customer has been charged, so
-    // the order stands, but it must not be shipped from stock that is not
-    // there. Flag loudly for manual review.
+    // the order stands — but it must not be shipped from stock that may not
+    // exist. Logging is not enough: put it in front of a human.
     console.error('[webhook] RESERVATION_LOST for paid order', verified.orderId);
+    await sql`
+      update orders
+         set needs_review = true,
+             review_reason = 'Stock reservation expired before payment confirmed; verify availability before fulfilling.'
+       where id = ${verified.orderId}
+    `;
   }
 
   await markProcessed(sql, provider.name, verified.eventId);

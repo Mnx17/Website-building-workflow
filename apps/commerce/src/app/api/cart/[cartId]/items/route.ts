@@ -3,6 +3,7 @@ import { addCartItemSchema, uuidSchema } from '@/lib/contracts';
 import { addCompositeItem, addProductItem, getCart } from '@/lib/repositories/carts';
 import { errorResponse, validationResponse } from '@/lib/errors';
 import { jsonResponse, readJson } from '@/lib/http';
+import { enforceRateLimit } from '@/lib/rate-limit';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -49,6 +50,11 @@ export async function POST(request: Request, context: RouteContext): Promise<Res
 
   try {
     const sql = getSql();
+
+    // Each add takes a stock reservation, so this is the endpoint an attacker
+    // would use to hold the whole catalogue hostage.
+    const limited = await enforceRateLimit(sql, 'cartMutate', request, cartId);
+    if (limited) return limited;
 
     if (parsed.data.type === 'product') {
       const result = await addProductItem(sql, {

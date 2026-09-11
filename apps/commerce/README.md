@@ -1,12 +1,11 @@
-# Sweets Commerce — P1 + P2 + P3
+# Sweets Commerce
 
-Phases 1–3 of the [headless commerce implementation plan](../../docs/headless-commerce-implementation-plan.md):
+All four phases of the [headless commerce implementation plan](../../docs/headless-commerce-implementation-plan.md):
 
 - **P1** — PostgreSQL schema, inventory RPCs, cart/configuration API.
 - **P2** — 3D configurator, bilingual RTL storefront, cart handoff.
 - **P3** — checkout, payment webhooks, weight-based shipping, gifting.
-
-The admin CMS and theme system are P4.
+- **P4** — staff auth and roles, admin CMS, theme system, rate limiting, audit trail.
 
 ## Running it
 
@@ -70,8 +69,8 @@ raw_materials.reserved_qty = sum(delta_reserved_qty)
 `commit_order_stock()` returns `committed | already_committed |
 reservation_lost` rather than raising, because a webhook handler that throws is
 retried forever. `reservation_lost` means the hold lapsed before payment
-landed — P3 must flag that order for manual review instead of shipping stock
-that is not there.
+landed — the webhook flags that order for manual review instead of shipping
+stock that is not there (see "Review queue" below).
 
 ## API
 
@@ -153,7 +152,7 @@ are.
 |---|---|
 | `POST /api/checkout/session` | Recomputes totals from the cart, creates the order, returns a gateway URL (or nothing extra for COD). |
 | `POST /api/webhooks/:provider` | Verifies the signature, dedupes the event, commits stock. |
-| `GET /api/orders/:id/documents?type=` | `invoice` (priced) or `packing_slip` (price-free). Staff token required. |
+| `GET /api/orders/:id/documents?type=` | `invoice` (priced) or `packing_slip` (price-free). Staff, or the buyer for their own invoice. |
 
 **Payment is behind an interface, not a Thawani import.** The merchant's
 acquiring options are not confirmed — Stripe cannot onboard an Omani entity —
@@ -219,6 +218,111 @@ shipping nothing. The document *model* is renderer-independent, so React-PDF
 slots in behind the same functions once a licensed Arabic face is vendored.
 Browser print-to-PDF handles Arabic correctly today, which covers fulfilment.
 
+## Admin, auth and hardening (P4)
+
+### Two access paths, two mechanisms
+
+This is the thing most likely to trip up the next person, so it is worth being
+explicit:
+
+| Path | Identity | Enforced by |
+|---|---|---|
+| Browser to PostgREST with the anon key | Supabase JWT, `auth.uid()` | **RLS policies** (`0003_rls.sql`) |
+| Route Handler to `postgres.js` with the service role | JWT verified in `lib/auth.ts` | **`requireRole()` in the handler** |
+
+On the second path `auth.uid()` is **always null** — there is no JWT on that
+connection. A `has_role()` check inside a function called from a Route Handler
+therefore rejects every legitimate call while looking like protection. That is
+why `activate_theme` takes an explicit actor argument, and why authorisation
+for the admin API lives in `requireRole`, not in RLS.
+
+RLS is not decorative: it protects the anon-key path and is the backstop if
+anything is ever exposed through PostgREST. But it is not what guards
+`/api/admin/*`.
+
+### Auth
+
+Supabase issues HS256 JWTs signed with the project secret, so verification is a
+local HMAC check — no network call per admin request. The token establishes
+*who*; it never establishes *what they may do*. The role is read from
+`staff_users` server-side, so a token claiming `role: admin` is ignored.
+
+The verifier pins the algorithm rather than trusting the token's own `alg`
+header — accepting that header is the classic JWT bypass (`alg: none`, or
+HS256-signed-with-the-public-key). Tests cover both.
+
+Everything fails closed: no secret configured returns 503, not "allow
+everything in development".
+
+### Admin API
+
+| Route | Read | Write |
+|---|---|---|
+| `/api/admin/products`, `/materials` | any staff | admin, editor |
+| `/api/admin/composites` | any staff | admin |
+| `/api/admin/inventory` | any staff | admin, editor |
+| `/api/admin/orders` | any staff | admin, fulfillment |
+| `/api/admin/theme` | any staff | admin |
+| `/api/admin/audit` | admin | — |
+
+Writes go through one factory (`lib/admin/route-factory.ts`) so the role check,
+the audit trail and the error mapping cannot drift apart between routes — the
+usual way an admin panel ends up with one endpoint that forgot a check.
+
+Two things are deliberately not writable through it:
+
+- **`stock_qty`** — stock moves only through `adjust_stock()`, which writes the
+  ledger in the same transaction. A direct UPDATE would break
+  `stock_qty = sum(delta_stock_qty)` silently. The API returns 422 saying where
+  to go instead.
+- **Any column not on the allowlist** — unknown fields are dropped, not
+  trusted, so a client cannot set `id` or `created_at`.
+
+### Audit trail
+
+Every catalogue mutation writes before/after into `admin_audit_log` in the same
+transaction as the change. If the audit insert fails, the change fails: an
+unaudited edit is not an acceptable fallback when the point is answering "who
+dropped this price to 1 baisa". Append-only, enforced by rules.
+
+Note that row snapshots contain `bigint` money columns, which `JSON.stringify`
+refuses to serialise — they are converted to decimal strings, matching how
+money crosses every other boundary here.
+
+### Rate limiting
+
+Fixed-window counters in Postgres, not in memory: Route Handlers run on
+instances that share no process state, so an in-memory limiter multiplies the
+real limit by the instance count and resets on every cold start.
+
+Cart-scoped endpoints key on the **cart id**, not the IP. That is both more
+accurate (one shopper behind CGNAT is not a hundred) and avoids a trap: with no
+proxy header every caller would otherwise share one bucket, so the first N
+customers per minute would check out and everyone else would get 429. Where no
+identifier can be determined at all the limiter **does not limit** and warns —
+a throttle that takes the site down is worse than no throttle.
+
+It also fails open on a database error. Losing throttling for a few minutes is
+cheaper than losing sales.
+
+### Theme system
+
+The active theme is read per request in the root layout and emitted as CSS
+custom properties — no client JS, no flash of unthemed content. Colours are
+re-validated before going into the `<style>` tag even though the column has a
+CHECK constraint, and the font name is stripped: that string is interpolated
+into CSS, and a value that arrived by another route must not become injection.
+
+Fonts are restricted to an Arabic-capable whitelist. Most Latin display faces
+silently fall back for Arabic glyphs, which wrecks half the storefront while
+looking fine to whoever picked the font.
+
+### Review queue
+
+`commit_order_stock` returning `reservation_lost` now sets `needs_review` with
+a reason and surfaces it at the top of the admin dashboard. The customer has
+been charged for stock that may not exist — logging that was not enough.
+
 ## Known gaps
 
 - **No GLB models.** The configurator runs on placeholder geometry (see above).
@@ -233,16 +337,19 @@ Browser print-to-PDF handles Arabic correctly today, which covers fulfilment.
   unit tests and the checkout flow by route-handler integration tests, but
   nothing drives a real pointer over a real canvas or a real browser through
   checkout. Playwright is still outstanding.
-- **Document access is a shared staff token**, not a role check. When Supabase
-  Auth lands in P4 this becomes `has_role('{admin,fulfillment}')` plus
-  buyer-owns-order, and the token goes away.
-- **`reservation_lost` is logged, not handled.** If a hold lapses before
-  payment confirms, the customer is charged and the order stands, but nothing
-  yet routes it to a human. P4 needs an admin queue for it.
-- No authentication yet. Carts are anonymous; `staff_users` and the RLS
-  policies are in place but nothing populates `auth.uid()` (P4).
-- Route Handlers have no rate limiting. `POST /api/cart` is an unauthenticated
-  insert, and `POST /api/configurations/price` is callable at will.
+- **No sign-in UI.** The admin API and shell verify Supabase JWTs, but nothing
+  here renders a login form or refreshes a session — that needs the Supabase
+  client wired to a real project. The shell shows its locked state until then.
+- **No composite template builder UI.** The API accepts slot definitions, but
+  the 3D slot picker from the plan is not built; slot positions are edited as
+  JSON. Lower value until real models exist.
+- **No product/material admin screens.** Full CRUD exists over the API and is
+  tested; only the dashboard, inventory and audit views are rendered.
+- **No Playwright and no load test.** Both were named in the plan's P4 and are
+  still outstanding.
+- Buyer accounts are not wired: carts stay anonymous, so `orders.user_id` is
+  only ever set by an admin. The buyer-reads-own-invoice path exists and is
+  tested, but nothing populates it yet in normal use.
 - Cart line quantities can be added but not edited; only whole-line removal is
   wired.
 - No confirmation emails. The gifting rules define which template each

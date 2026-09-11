@@ -4,6 +4,7 @@ import { priceConfiguration } from '@/lib/repositories/configurations';
 import { configHash } from '@/lib/config-hash';
 import { errorResponse, validationResponse } from '@/lib/errors';
 import { jsonResponse, readJson } from '@/lib/http';
+import { enforceRateLimit } from '@/lib/rate-limit';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -24,6 +25,12 @@ export async function POST(request: Request): Promise<Response> {
 
   try {
     const sql = getSql();
+
+    // Unauthenticated and callable at will; the configurator debounces to
+    // ~2.5/s at most, so a legitimate session stays far under the limit.
+    const limited = await enforceRateLimit(sql, 'price', request);
+    if (limited) return limited;
+
     const [pricing, hash] = await Promise.all([
       priceConfiguration(sql, parsed.data.composite_product_id, parsed.data.slot_map),
       configHash(parsed.data.composite_product_id, parsed.data.slot_map),
