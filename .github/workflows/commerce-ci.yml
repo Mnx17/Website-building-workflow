@@ -56,3 +56,8 @@ jobs:
 
       - name: Integration tests
         run: npm run test:integration
+
+      # Catches RSC/client boundary mistakes and bundler failures that neither
+      # tsc nor the test suites see.
+      - name: Production build
+        run: npm run build

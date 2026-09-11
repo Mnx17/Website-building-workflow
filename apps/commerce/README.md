@@ -1,8 +1,11 @@
-# Sweets Commerce — P1 (data model + headless backend)
+# Sweets Commerce — P1 + P2
 
-Phase 1 of the [headless commerce implementation plan](../../docs/headless-commerce-implementation-plan.md):
-the PostgreSQL schema, the inventory RPCs, and the cart/configuration API. The
-storefront and 3D configurator arrive in P2.
+Phases 1 and 2 of the [headless commerce implementation plan](../../docs/headless-commerce-implementation-plan.md):
+
+- **P1** — PostgreSQL schema, inventory RPCs, cart/configuration API.
+- **P2** — 3D configurator, bilingual RTL storefront, cart handoff.
+
+Checkout, payments, shipping and gifting are P3; the admin CMS is P4.
 
 ## Running it
 
@@ -89,12 +92,71 @@ exists so CI can use a plain Postgres container.
 Every statement is guarded, so it is a no-op on a real Supabase project — it
 must never replace Supabase's own `auth.uid()`.
 
-## Known gaps at the end of P1
+## The configurator (P2)
 
+Routes are `/[locale]/configure/[slug]`, locale being `en` or `ar`. `/`
+redirects to a locale based on `Accept-Language`.
+
+```
+ConfiguratorClient          hydrates bigint money from wire strings
+ └─ ConfiguratorProvider    per-mount zustand store (never module-level)
+     ├─ ConfiguratorCanvas  frameloop="demand", dpr/shadow downgrade
+     │   └─ ProductModel
+     │       ├─ BoxShell | BouquetRing   procedural placeholder geometry
+     │       ├─ SlotDropZone × n         colliders, highlight, shake-on-reject
+     │       └─ SlotContents             what is placed, by slot position
+     ├─ MaterialTray        drag source AND tap-to-select
+     ├─ PriceTicker         optimistic estimate, server-confirmed badge
+     └─ AddToCartBar        gated on the same rules the database enforces
+```
+
+**State.** The store is zustand *vanilla* (`createStore`), not the React hook,
+for two reasons: the interaction rules are unit-testable in Node with no
+renderer, and a module-level store would be shared across SSR requests,
+leaking one visitor's build into another's.
+
+**Pricing.** `estimate()` mirrors `price_configuration()` so the ticker updates
+on the same frame as the drop. It is not an authority: `usePriceSync` confirms
+against the server 400ms after the last change, discards responses for
+superseded revisions, and any edit clears the stored server price so a stale
+`config_hash` can never reach the cart.
+
+**Input.** Drag and tap are both first-class — dragging from DOM onto a WebGL
+canvas is unreliable on mobile browsers, so touch users get tap-a-material then
+tap-a-slot. Tapping a filled slot with nothing in hand empties it.
+
+**Performance.** `frameloop="demand"` is the important one: the scene is static
+between interactions, and rendering it continuously is what drains a phone
+battery. `dpr` and shadows start conservative on devices reporting ≤4 cores, and degrade
+further via drei's `PerformanceMonitor`.
+
+**RTL.** `dir` is set on `<html>` from the route segment, never toggled by
+client script. The stylesheet uses logical properties only, and
+`tests/unit/rtl-guard.test.ts` fails the build if a physical one appears. The
+3D scene is deliberately **not** mirrored — world coordinates are identical in
+both locales, and slot order comes from `composite_slots.position`, never from
+DOM order.
+
+### Placeholder geometry
+
+There are no GLB assets yet, so the box and bouquet are procedural meshes and
+placed items are colour-coded spheres. `model_url` is already carried from the
+database through to the components, so the swap to Draco+Meshopt GLBs via
+`useGLTF` is confined to `ProductModel` and `SlotContents`. **Until real models
+land, P2 is not visually complete** — the interaction, pricing and cart paths
+are.
+
+## Known gaps
+
+- **No GLB models.** The configurator runs on placeholder geometry (see above).
+  This is the critical-path dependency for P2 being visually done.
+- **No browser-level tests.** The interaction rules are covered by 21 store
+  unit tests, but nothing drives a real pointer over a real canvas; Playwright
+  arrives with the P3 gift-checkout suite.
 - No authentication yet. Carts are anonymous; `staff_users` and the RLS
   policies are in place but nothing populates `auth.uid()` (P4).
-- Route Handlers have no rate limiting. `POST /api/cart` is currently an
-  unauthenticated insert.
-- `price_configuration` is called once per add-to-cart and once per debounced
-  keystroke; no caching yet.
+- Route Handlers have no rate limiting. `POST /api/cart` is an unauthenticated
+  insert, and `POST /api/configurations/price` is callable at will.
+- Cart line quantities can be added but not edited; only whole-line removal is
+  wired.
 - Shipping rates are seeded and constrained but the calculator itself is P3.

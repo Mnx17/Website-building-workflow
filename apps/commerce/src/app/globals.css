@@ -1,0 +1,282 @@
+/*
+ * Logical properties only — `padding-inline`, `margin-inline-start`,
+ * `inset-inline-*`, `text-align: start`. No `left`/`right`/`padding-left`.
+ * That is what lets `dir="rtl"` on <html> flip the whole layout with no
+ * per-component branching, and it is why the rule is enforced from the first
+ * commit rather than retrofitted.
+ */
+
+:root {
+  --brand-primary: #1f3b2c;
+  --brand-secondary: #e8b84b;
+  --ink: #16211c;
+  --muted: #667b70;
+  --surface: #ffffff;
+  --ground: #f6f4ef;
+  --line: #dfd9cd;
+  --danger: #d9534f;
+  --ok: #2f8f5b;
+  --radius: 12px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: 'Tajawal', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  line-height: 1.5;
+}
+
+.home {
+  padding-block: 3rem;
+  padding-inline: 1.5rem;
+  max-width: 48rem;
+  margin-inline: auto;
+}
+
+.home__list {
+  list-style: none;
+  padding-inline: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.home__list a {
+  display: block;
+  padding: 1rem 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  color: var(--brand-primary);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+/* ------------------------------------------------------------ configurator */
+
+.configurator {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 22rem;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  min-height: 100dvh;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .configurator {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.configurator__title {
+  margin: 0 0 0.75rem;
+  font-size: 1.5rem;
+}
+
+.canvas,
+.canvas__placeholder {
+  aspect-ratio: 4 / 3;
+  width: 100%;
+  background: linear-gradient(160deg, #fbfaf7, #ece7dc);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  /* The canvas handles its own gestures; stop the page scrolling under a drag. */
+  touch-action: none;
+}
+
+.configurator__panel {
+  display: grid;
+  gap: 1rem;
+  position: sticky;
+  inset-block-start: 1.5rem;
+}
+
+/* -------------------------------------------------------------------- tray */
+
+.tray {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1rem;
+}
+
+.tray__title {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.tray__hint {
+  margin: 0.25rem 0 0.75rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.tray__list {
+  list-style: none;
+  margin: 0;
+  padding-inline: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
+  gap: 0.5rem;
+}
+
+.chip {
+  inline-size: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  cursor: grab;
+  text-align: start;
+  font: inherit;
+  color: inherit;
+  touch-action: none;
+}
+
+.chip[data-active] {
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 2px rgb(31 59 44 / 0.15);
+}
+
+.chip[data-sold-out] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.chip__swatch {
+  inline-size: 1.5rem;
+  block-size: 1.5rem;
+  border-radius: 50%;
+  flex: none;
+  border: 1px solid rgb(0 0 0 / 0.12);
+}
+
+.chip__body {
+  display: grid;
+  min-inline-size: 0;
+}
+
+.chip__name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chip__price {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+/* ------------------------------------------------------------------ ticker */
+
+.ticker {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1rem;
+}
+
+.ticker__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.ticker__price {
+  font-size: 1.6rem;
+  font-weight: 700;
+  /* Prices stay Latin-numeral even in Arabic; see formatOmr(). */
+  font-variant-numeric: tabular-nums;
+}
+
+.ticker__weight,
+.ticker__slots {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.ticker__status {
+  margin: 0.4rem 0 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.ticker__status[data-state='error'] {
+  color: var(--danger);
+}
+
+.ticker__status[data-confirmed] {
+  color: var(--ok);
+}
+
+.ticker__repriced {
+  margin: 0.4rem 0 0;
+  font-size: 0.8rem;
+  color: var(--brand-primary);
+}
+
+/* ----------------------------------------------------------------- add bar */
+
+.addbar {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1rem;
+}
+
+.addbar__blocked {
+  margin: 0 0 0.65rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.addbar__error {
+  margin: 0 0 0.65rem;
+  font-size: 0.85rem;
+  color: var(--danger);
+}
+
+.addbar__actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn {
+  flex: 1;
+  padding: 0.7rem 1rem;
+  border-radius: 10px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.btn--primary {
+  background: var(--brand-primary);
+  color: #fff;
+}
+
+.btn--primary:disabled {
+  background: #b9c4bd;
+  cursor: not-allowed;
+}
+
+.btn--ghost {
+  background: transparent;
+  border-color: var(--line);
+  color: var(--muted);
+  flex: 0 0 auto;
+}
