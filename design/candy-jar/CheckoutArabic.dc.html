@@ -1,0 +1,106 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alexandria:wght@300;400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Alexandria', 'Tajawal', system-ui, sans-serif; }
+    a { color: #C25A28; text-decoration: none; }
+    a:hover { color: #A4471C; }
+  </style>
+</helmet>
+
+<!-- No fake status bar: the real one renders on top of this on a device. -->
+<div dir="rtl" style="width: 390px; height: 844px; background: #FFF9F0; color: #2E2119; display: flex; flex-direction: column; overflow: hidden;">
+
+  <header style="display: flex; align-items: center; gap: 12px; padding: 14px 20px; background: #F58752; flex: none;">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2E2119" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="transform: scaleX(-1);"><path d="m15 18-6-6 6-6"></path></svg>
+    <span style="font-size: 17px; font-weight: 700; color: #2E2119; flex: 1;">إتمام الشراء</span>
+    <span style="font-size: 20px; font-weight: 700; color: #FFFFFF;">Candy&nbsp;jar</span>
+  </header>
+
+  <div style="flex: 1; overflow: hidden; padding: 16px 20px; display: flex; flex-direction: column; gap: 12px;">
+
+    <!-- cart summary -->
+    <section style="background: #FFFFFF; border: 1px solid #F0E2D6; border-radius: 20px; padding: 16px; flex: none;">
+      <h2 style="margin: 0 0 10px; font-size: 15px; font-weight: 600;">سلتك</h2>
+      <div style="display: grid; grid-template-columns: auto auto; justify-content: space-between; gap: 6px 16px; font-size: 14px;">
+        <span style="color: #6E5B50;">المجموع الفرعي</span>
+        <span style="font-weight: 700; font-variant-numeric: tabular-nums; text-align: start;">OMR 9.000</span>
+        <span style="color: #6E5B50;">الوزن الإجمالي</span>
+        <span style="font-weight: 600; text-align: start;">570 غرام</span>
+      </div>
+    </section>
+
+    <!-- governorate -->
+    <section style="background: #FFFFFF; border: 1px solid #F0E2D6; border-radius: 20px; padding: 16px; flex: none;">
+      <label style="display: grid; gap: 6px;">
+        <span style="font-size: 13px; color: #6E5B50;">المحافظة</span>
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0.7rem 0.8rem; border: 1px solid #F0E2D6; border-radius: 12px; background: #FFFFFF;">
+          <span style="font-size: 15px; font-weight: 500;">مسقط</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6E5B50" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+        </div>
+      </label>
+
+      <div style="margin-top: 14px;">
+        <div style="font-size: 13px; color: #6E5B50; margin-bottom: 8px;">الدفع</div>
+        <div style="display: flex; gap: 8px;">
+          <div style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 0.7rem; border: 1.5px solid #F58752; border-radius: 12px; background: rgba(245,135,82,0.12); font-size: 14px; font-weight: 600;">بطاقة</div>
+          <div style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 0.7rem; border: 1.5px solid #F0E2D6; border-radius: 12px; font-size: 14px; color: #A2907F;">الدفع عند الاستلام</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- gift -->
+    <section style="background: #F8B7C4; border-radius: 20px; padding: 16px; flex: 1; min-height: 0; overflow: hidden;">
+      <label style="display: flex; align-items: center; gap: 10px;">
+        <span style="width: 44px; height: 26px; border-radius: 999px; background: #2E2119; position: relative; flex: none; display: inline-block;">
+          <span style="position: absolute; inset-block-start: 3px; inset-inline-end: 3px; width: 20px; height: 20px; border-radius: 50%; background: #FFFFFF; display: block;"></span>
+        </span>
+        <span style="font-weight: 700; font-size: 15px;">🎁 هذه هدية</span>
+      </label>
+
+      <div style="margin-top: 14px; display: grid; gap: 10px;">
+        <label style="display: grid; gap: 5px;">
+          <span style="font-size: 12px; color: #2E2119; opacity: 0.75;">اسم المستلم</span>
+          <input value="فاطمة البلوشية" style="font: inherit; font-size: 14px; padding: 0.6rem 0.7rem; border: none; border-radius: 10px; background: #FFFFFF; color: #2E2119; width: 100%;">
+        </label>
+        <label style="display: grid; gap: 5px;">
+          <span style="font-size: 12px; color: #2E2119; opacity: 0.75;">هاتف المستلم</span>
+          <input value="+96891234567" dir="ltr" style="font: inherit; font-size: 14px; padding: 0.6rem 0.7rem; border: none; border-radius: 10px; background: #FFFFFF; color: #2E2119; width: 100%; text-align: end;">
+        </label>
+        <label style="display: grid; gap: 5px;">
+          <span style="font-size: 12px; color: #2E2119; opacity: 0.75;">رسالة الهدية</span>
+          <div style="font: inherit; font-size: 14px; padding: 0.6rem 0.7rem; border: none; border-radius: 10px; background: #FFFFFF; color: #2E2119; min-height: 54px;">كل عام وأنتِ بخير</div>
+          <span style="font-size: 11px; color: #2E2119; opacity: 0.7;">بقي 263 حرفاً</span>
+        </label>
+      </div>
+    </section>
+
+    <!-- hide prices -->
+    <section style="background: #FFFFFF; border: 1px solid #F0E2D6; border-radius: 20px; padding: 14px 16px; flex: none;">
+      <label style="display: flex; align-items: flex-start; gap: 10px;">
+        <span style="width: 22px; height: 22px; border-radius: 7px; background: #F58752; flex: none; display: flex; align-items: center; justify-content: center; margin-top: 1px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2E2119" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
+        </span>
+        <span>
+          <span style="font-size: 14px; font-weight: 600; display: block;">إخفاء الأسعار في مستندات التوصيل</span>
+          <span style="font-size: 12px; color: #6E5B50; line-height: 1.7; display: block; margin-top: 3px;">يستلم المستلم قائمة تغليف بدون أسعار. فاتورتك أنت لا تتغير.</span>
+        </span>
+      </label>
+    </section>
+
+  </div>
+
+  <div style="padding: 12px 20px 20px; flex: none;">
+    <button style="font: inherit; width: 100%; font-weight: 700; font-size: 16px; padding: 0.95rem; border-radius: 999px; border: none; background: #F58752; color: #2E2119; cursor: pointer;">ادفع OMR 10.500</button>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

@@ -1,0 +1,196 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alexandria:wght@300;400;500;600;700&display=swap">
+  <style>
+    body { margin: 0; font-family: 'Alexandria', 'Tajawal', system-ui, sans-serif; }
+    a { color: #C25A28; text-decoration: none; }
+    a:hover { color: #A4471C; }
+  </style>
+</helmet>
+
+<div style="background: #FFF9F0; color: #2E2119; padding: 56px 64px; min-height: 100%;">
+
+  <div style="padding-bottom: 24px; border-bottom: 2px solid #F0E2D6;">
+    <div style="font-size: 13px; letter-spacing: 0.18em; text-transform: uppercase; color: #6E5B50; font-weight: 500;">Candy Jar</div>
+    <h1 style="margin: 6px 0 0; font-size: 36px; font-weight: 700; letter-spacing: -0.02em;">Components</h1>
+    <p style="margin: 10px 0 0; font-size: 15px; color: #6E5B50; max-width: 62ch; line-height: 1.6;">The storefront's existing pieces, rebuilt on the brand. Anatomy, sizes and radii are lifted from the shipped stylesheet — only the colour and the type face change.</p>
+  </div>
+
+  <!-- ------------------------------------------------------------- buttons -->
+  <section style="margin-top: 36px;">
+    <h2 style="margin: 0 0 4px; font-size: 20px; font-weight: 600;">Buttons</h2>
+    <p style="margin: 0 0 18px; font-size: 14px; color: #6E5B50; max-width: 64ch; line-height: 1.6;">The shipped primary button is white on the brand colour. On Jar orange that measures 2.48:1, so it changes to ink — the one component the palette forces a real change on.</p>
+
+    <div style="display: flex; gap: 14px; flex-wrap: wrap; align-items: center;">
+      <button style="font: inherit; font-weight: 600; font-size: 15px; padding: 0.7rem 1.6rem; border-radius: 999px; border: none; background: #F58752; color: #2E2119; cursor: pointer;">Add to cart</button>
+      <button style="font: inherit; font-weight: 600; font-size: 15px; padding: 0.7rem 1.6rem; border-radius: 999px; border: 1.5px solid #F0E2D6; background: transparent; color: #6E5B50; cursor: pointer;">Start over</button>
+      <button style="font: inherit; font-weight: 600; font-size: 15px; padding: 0.7rem 1.6rem; border-radius: 999px; border: none; background: #F8B7C4; color: #2E2119; cursor: pointer;">Send as a gift</button>
+      <button style="font: inherit; font-weight: 600; font-size: 15px; padding: 0.7rem 1.6rem; border-radius: 999px; border: none; background: #EFE6DA; color: #A2907F; cursor: not-allowed;">Fill 3 more slots</button>
+    </div>
+
+    <div style="display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap;">
+      <div style="flex: 1 1 260px; background: #FFFFFF; border: 1px solid #F0E2D6; border-radius: 16px; padding: 14px 16px;">
+        <div style="font-size: 13px; font-weight: 600;">Ink on orange, not white</div>
+        <div style="font-size: 12px; color: #6E5B50; line-height: 1.6; margin-top: 3px;">6.28:1. The label still reads at arm's length on a phone in daylight.</div>
+      </div>
+      <div style="flex: 1 1 260px; background: #FFFFFF; border: 1px solid #F0E2D6; border-radius: 16px; padding: 14px 16px;">
+        <div style="font-size: 13px; font-weight: 600;">Disabled says why</div>
+        <div style="font-size: 12px; color: #6E5B50; line-height: 1.6; margin-top: 3px;">The label carries the reason. A greyed button with no explanation is a dead end.</div>
+      </div>
+      <div style="flex: 1 1 260px; background: #FFFFFF; border: 1px solid #F0E2D6; border-radius: 16px; padding: 14px 16px;">
+        <div style="font-size: 13px; font-weight: 600;">44px minimum target</div>
+        <div style="font-size: 12px; color: #6E5B50; line-height: 1.6; margin-top: 3px;">These sit at 46px. The configurator is used one-handed on a phone.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---------------------------------------------------------- material tray -->
+  <section style="margin-top: 40px;">
+    <h2 style="margin: 0 0 4px; font-size: 20px; font-weight: 600;">Material chip</h2>
+    <p style="margin: 0 0 18px; font-size: 14px; color: #6E5B50; max-width: 64ch; line-height: 1.6;">The drag source in the configurator tray. Swatch colour comes from <span style="font-family: ui-monospace, monospace; font-size: 13px;">raw_materials.color_hex</span>, so the sweet's own colour does the work — the brand palette stays out of it.</p>
+
+    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; max-width: 780px;">
+      <!-- resting -->
+      <div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; background: #FFFFFF; border: 1px solid #F0E2D6; border-radius: 10px;">
+        <span style="width: 1.5rem; height: 1.5rem; border-radius: 50%; background: #E8862B; border: 1px solid rgba(0,0,0,0.12); flex: none;"></span>
+        <span style="display: grid; min-width: 0;">
+          <span style="font-size: 0.85rem; font-weight: 600;">Candied Orange</span>
+          <span style="font-size: 0.78rem; color: #6E5B50;">OMR 0.750</span>
+        </span>
+      </div>
+      <!-- selected -->
+      <div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; background: #FFFFFF; border: 1px solid #F58752; border-radius: 10px; box-shadow: 0 0 0 3px rgba(245,135,82,0.22);">
+        <span style="width: 1.5rem; height: 1.5rem; border-radius: 50%; background: #3B2417; border: 1px solid rgba(0,0,0,0.12); flex: none;"></span>
+        <span style="display: grid; min-width: 0;">
+          <span style="font-size: 0.85rem; font-weight: 600;">Dark Chocolate</span>
+          <span style="font-size: 0.78rem; color: #6E5B50;">OMR 1.250</span>
+        </span>
+      </div>
+      <!-- arabic -->
+      <div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; background: #FFFFFF; border: 1px solid #F0E2D6; border-radius: 10px;" dir="rtl">
+        <span style="width: 1.5rem; height: 1.5rem; border-radius: 50%; background: #7A4A1E; border: 1px solid rgba(0,0,0,0.12); flex: none;"></span>
+        <span style="display: grid; min-width: 0;">
+          <span style="font-size: 0.85rem; font-weight: 600;">حلوى عمانية</span>
+          <span style="font-size: 0.78rem; color: #6E5B50;">OMR 1.800</span>
+        </span>
+      </div>
+      <!-- sold out -->
+      <div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; background: #FFFFFF; border: 1px solid #F0E2D6; border-radius: 10px; opacity: 0.45;">
+        <span style="width: 1.5rem; height: 1.5rem; border-radius: 50%; background: #C2185B; border: 1px solid rgba(0,0,0,0.12); flex: none;"></span>
+        <span style="display: grid; min-width: 0;">
+          <span style="font-size: 0.85rem; font-weight: 600;">Preserved Rose</span>
+          <span style="font-size: 0.78rem; color: #6E5B50;">Sold out</span>
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------------------ price ticker -->
+  <section style="margin-top: 40px;">
+    <h2 style="margin: 0 0 4px; font-size: 20px; font-weight: 600;">Price ticker</h2>
+    <p style="margin: 0 0 18px; font-size: 14px; color: #6E5B50; max-width: 64ch; line-height: 1.6;">Three states, because the price is an estimate until the server confirms it. The estimate is never dressed up as final.</p>
+
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; max-width: 900px;">
+      <div style="background: #FFFFFF; border: 1px solid #F0E2D6; border-radius: 12px; padding: 1rem;">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem;">
+          <span style="font-size: 1.6rem; font-weight: 700; font-variant-numeric: tabular-nums;">OMR 4.500</span>
+          <span style="color: #6E5B50; font-size: 0.85rem;">285 g</span>
+        </div>
+        <p style="margin: 0.4rem 0 0; font-size: 0.8rem; color: #6E5B50;">Estimated</p>
+        <p style="margin: 0; font-size: 0.85rem; color: #6E5B50;">2 of 4 slots filled</p>
+      </div>
+
+      <div style="background: #FFFFFF; border: 1px solid #F0E2D6; border-radius: 12px; padding: 1rem;">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem;">
+          <span style="font-size: 1.6rem; font-weight: 700; font-variant-numeric: tabular-nums;">OMR 4.500</span>
+          <span style="color: #6E5B50; font-size: 0.85rem;">285 g</span>
+        </div>
+        <p style="margin: 0.4rem 0 0; font-size: 0.8rem; color: #6E5B50; display: flex; align-items: center; gap: 6px;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6E5B50" stroke-width="2.4" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.2-8.6"></path></svg>
+          Confirming price…
+        </p>
+        <p style="margin: 0; font-size: 0.85rem; color: #6E5B50;">2 of 4 slots filled</p>
+      </div>
+
+      <div style="background: #FFFFFF; border: 1px solid #F0E2D6; border-radius: 12px; padding: 1rem;">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem;">
+          <span style="font-size: 1.6rem; font-weight: 700; font-variant-numeric: tabular-nums;">OMR 4.500</span>
+          <span style="color: #6E5B50; font-size: 0.85rem;">285 g</span>
+        </div>
+        <p style="margin: 0.4rem 0 0; font-size: 0.8rem; color: #2F8F5B; display: flex; align-items: center; gap: 6px;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#2F8F5B" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
+          Price confirmed
+        </p>
+        <p style="margin: 0; font-size: 0.85rem; color: #6E5B50;">2 of 4 slots filled</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------------------- slot states -->
+  <section style="margin-top: 40px;">
+    <h2 style="margin: 0 0 4px; font-size: 20px; font-weight: 600;">Slot states</h2>
+    <p style="margin: 0 0 18px; font-size: 14px; color: #6E5B50; max-width: 64ch; line-height: 1.6;">Shown here as the 2D fallback, which is what renders when WebGL is unavailable. The same four states colour the drop zones in the 3D scene.</p>
+
+    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; max-width: 900px;">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.75rem 1rem; border: 1.5px dashed #F0E2D6; border-radius: 10px; background: #FFFFFF;">
+        <span style="color: #6E5B50; font-size: 0.85rem;">Top left</span>
+        <span style="font-weight: 600; color: #A2907F;">—</span>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.75rem 1rem; border: 1.5px solid #F58752; border-radius: 10px; background: #FFFFFF;">
+        <span style="color: #6E5B50; font-size: 0.85rem;">Top right</span>
+        <span style="font-weight: 600;">Candied Orange</span>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.75rem 1rem; border: 1.5px solid #2F8F5B; border-radius: 10px; background: rgba(47,143,91,0.08);">
+        <span style="color: #6E5B50; font-size: 0.85rem;">Bottom left</span>
+        <span style="font-weight: 600; color: #2F8F5B;">Drop here</span>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.75rem 1rem; border: 1.5px solid #D9534F; border-radius: 10px; background: rgba(217,83,79,0.08);">
+        <span style="color: #6E5B50; font-size: 0.85rem;">Ring 5</span>
+        <span style="font-weight: 600; color: #D9534F;">Roses only</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ------------------------------------------------------------ form fields -->
+  <section style="margin-top: 40px; padding-bottom: 24px;">
+    <h2 style="margin: 0 0 4px; font-size: 20px; font-weight: 600;">Fields &amp; the gift toggle</h2>
+    <p style="margin: 0 0 18px; font-size: 14px; color: #6E5B50; max-width: 64ch; line-height: 1.6;">Blossom pink marks everything to do with gifting, so the branch of checkout that hides prices is visually distinct from the branch that does not.</p>
+
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; max-width: 900px;">
+      <div style="display: grid; gap: 0.3rem;">
+        <span style="font-size: 0.85rem; color: #6E5B50;">Recipient name</span>
+        <input value="Fatma Al Balushi" style="font: inherit; padding: 0.55rem 0.7rem; border: 1px solid #F0E2D6; border-radius: 8px; background: #FFFFFF; color: #2E2119; width: 100%;">
+      </div>
+      <div style="display: grid; gap: 0.3rem;">
+        <span style="font-size: 0.85rem; color: #6E5B50;">Recipient phone</span>
+        <input value="+96891234567" style="font: inherit; padding: 0.55rem 0.7rem; border: 1.5px solid #F58752; border-radius: 8px; background: #FFFFFF; color: #2E2119; width: 100%;">
+      </div>
+      <div style="display: grid; gap: 0.3rem;">
+        <span style="font-size: 0.85rem; color: #6E5B50;">Phone, rejected</span>
+        <input value="+96851234567" style="font: inherit; padding: 0.55rem 0.7rem; border: 1.5px solid #D9534F; border-radius: 8px; background: #FFFFFF; color: #2E2119; width: 100%;">
+        <span style="font-size: 0.78rem; color: #D9534F;">Omani mobiles start 7 or 9</span>
+      </div>
+    </div>
+
+    <div style="margin-top: 16px; background: #F8B7C4; border-radius: 20px; padding: 20px 22px; max-width: 900px;">
+      <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
+        <span style="width: 44px; height: 26px; border-radius: 999px; background: #2E2119; position: relative; flex: none; display: inline-block;">
+          <span style="position: absolute; inset-block-start: 3px; inset-inline-end: 3px; width: 20px; height: 20px; border-radius: 50%; background: #FFFFFF; display: block;"></span>
+        </span>
+        <span style="font-weight: 600; font-size: 15px; color: #2E2119;">This is a gift</span>
+      </label>
+      <p style="margin: 10px 0 0; font-size: 13px; color: #2E2119; opacity: 0.8; line-height: 1.6; max-width: 64ch;">The recipient gets a packing slip with no prices on it. Your own invoice is unchanged. Cash on delivery is unavailable for gifts — the recipient would be asked to pay.</p>
+    </div>
+  </section>
+
+</div>
+</x-dc>
+</body>
+</html>
