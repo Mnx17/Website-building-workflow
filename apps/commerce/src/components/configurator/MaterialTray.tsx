@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useConfigurator, useConfiguratorStore, useLocale } from '@/lib/configurator/context';
 import { materialName } from '@/lib/configurator/types';
 import { formatOmr } from '@/lib/money';
@@ -20,7 +21,17 @@ export function MaterialTray() {
   const t = translator(locale);
   const store = useConfiguratorStore();
 
-  const materials = useConfigurator((state) => [...state.materials.values()]);
+  /**
+   * Select the Map itself, then derive the array.
+   *
+   * `(state) => [...state.materials.values()]` looks harmless and is not: it
+   * builds a new array on every call, so zustand's reference check never holds
+   * and the component re-renders forever (React error #185). The Map reference
+   * is stable for the life of the store, so this is cheap and terminates.
+   */
+  const materialMap = useConfigurator((state) => state.materials);
+  const materials = useMemo(() => [...materialMap.values()], [materialMap]);
+
   const selectedId = useConfigurator((state) => state.selectedMaterialId);
   const draggingId = useConfigurator((state) => state.dragging?.id ?? null);
 

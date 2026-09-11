@@ -399,3 +399,121 @@ body {
   text-align: end;
   font-variant-numeric: tabular-nums;
 }
+
+/* ---------------------------------------------------------------- checkout */
+
+.page {
+  max-width: 40rem;
+  margin-inline: auto;
+  padding-block: 2.5rem;
+  padding-inline: 1.5rem;
+}
+
+.checkout {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: auto auto;
+  justify-content: space-between;
+  gap: 0.35rem 1rem;
+  margin: 0;
+}
+
+.summary dd {
+  margin: 0;
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.field {
+  display: grid;
+  gap: 0.3rem;
+  margin-block-end: 0.9rem;
+  border: none;
+  padding: 0;
+}
+
+.field > span,
+.field > legend {
+  font-size: 0.85rem;
+  color: var(--muted);
+  padding: 0;
+}
+
+.field input,
+.field select,
+.field textarea {
+  font: inherit;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: inherit;
+  inline-size: 100%;
+}
+
+.field small[data-over] {
+  color: var(--danger);
+}
+
+.radio,
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-block-end: 0.4rem;
+}
+
+.gift {
+  margin-block-start: 0.9rem;
+  padding-block-start: 0.9rem;
+  border-block-start: 1px solid var(--line);
+}
+
+/* 2D fallback used when WebGL is unavailable or the renderer fails. */
+
+.slotlist {
+  padding: 1rem;
+}
+
+.slotlist ul {
+  list-style: none;
+  margin: 0;
+  padding-inline: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.slotlist__slot {
+  inline-size: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  font: inherit;
+  color: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.slotlist__slot[data-filled] {
+  border-style: solid;
+  border-color: var(--brand-primary);
+}
+
+.slotlist__label {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.slotlist__value {
+  font-weight: 600;
+}

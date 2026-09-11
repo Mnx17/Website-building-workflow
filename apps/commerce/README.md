@@ -6,6 +6,7 @@ All four phases of the [headless commerce implementation plan](../../docs/headle
 - **P2** — 3D configurator, bilingual RTL storefront, cart handoff.
 - **P3** — checkout, payment webhooks, weight-based shipping, gifting.
 - **P4** — staff auth and roles, admin CMS, theme system, rate limiting, audit trail.
+- **P4b** — checkout UI, Playwright E2E, WebGL fallback.
 
 ## Running it
 
@@ -323,6 +324,49 @@ looking fine to whoever picked the font.
 a reason and surfaces it at the top of the admin dashboard. The customer has
 been charged for stock that may not exist — logging that was not enough.
 
+## End-to-end tests
+
+```bash
+npm run build          # E2E runs against a production build, not next dev
+npm run test:e2e
+```
+
+The suite drives a real browser through the gift checkout flow in **both
+locales and both viewports**: cart summary, governorate, gift toggle, recipient
+fields, Arabic message, payment round trip, and the price-free packing slip as
+a browser actually receives it. It also asserts the invoice *does* show prices,
+so the check cannot rot into vacuous truth.
+
+It runs against `next start` deliberately. The dev server differs enough around
+RSC, caching and dynamic rendering that a suite green there can still fail in
+production — which is the failure this layer exists to catch. It earned that
+immediately: it found an infinite render loop (React #185) in `MaterialTray`
+that typecheck, 113 unit tests and 71 integration tests all missed, because it
+only manifests during hydration in a real browser. The configurator route was
+crashing for every user in a production build.
+
+**What it does not cover:** the cart is seeded through the API rather than by
+dragging across the WebGL canvas. Driving three.js raycasting with a synthetic
+pointer produces flaky tests rather than real coverage, and the interaction
+rules already have 21 dedicated store unit tests. The gap is honest: nothing
+verifies that a human can physically drag a sweet into a slot.
+
+Each test presents a distinct `x-forwarded-for`, because each test *is* a
+different shopper. This does not disable rate limiting — it stays enforced per
+simulated client, exactly as production sees it.
+
+## WebGL fallback
+
+If WebGL is unavailable — headless Chrome, a locked-down corporate build, an
+old Android, a GPU blocklist — the configurator renders its slots as a list
+instead. Every interaction rule lives in the store, so tapping a slot in the
+fallback behaves exactly as tapping it in 3D, and pricing, validation and
+add-to-cart are untouched.
+
+This is the non-3D fallback the plan's risk register asked for. Without it a
+missing WebGL context throws during hydration and Next replaces the whole
+document with "Application error" — the shopper cannot even see the products.
+
 ## Known gaps
 
 - **No GLB models.** The configurator runs on placeholder geometry (see above).
@@ -333,10 +377,9 @@ been charged for stock that may not exist — logging that was not enough.
   exist yet. Both are isolated in `parseWebhookBody` and the header constants;
   confirm them during onboarding. The signature verification itself (raw body,
   timing-safe, timestamp window) is provider-independent and correct.
-- **No browser-level tests.** The interaction rules are covered by 21 store
-  unit tests and the checkout flow by route-handler integration tests, but
-  nothing drives a real pointer over a real canvas or a real browser through
-  checkout. Playwright is still outstanding.
+- **Nothing drives the 3D canvas.** Playwright covers checkout end to end, but
+  no test verifies that a human can drag a sweet into a slot; that path rests
+  on the store unit tests and the WebGL fallback.
 - **No sign-in UI.** The admin API and shell verify Supabase JWTs, but nothing
   here renders a login form or refreshes a session — that needs the Supabase
   client wired to a real project. The shell shows its locked state until then.
@@ -345,8 +388,7 @@ been charged for stock that may not exist — logging that was not enough.
   JSON. Lower value until real models exist.
 - **No product/material admin screens.** Full CRUD exists over the API and is
   tested; only the dashboard, inventory and audit views are rendered.
-- **No Playwright and no load test.** Both were named in the plan's P4 and are
-  still outstanding.
+- **No load test.** Named in the plan's P4 and still outstanding.
 - Buyer accounts are not wired: carts stay anonymous, so `orders.user_id` is
   only ever set by an admin. The buyer-reads-own-invoice path exists and is
   tested, but nothing populates it yet in normal use.

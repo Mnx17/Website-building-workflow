@@ -6,6 +6,7 @@ import { usePriceSync } from '@/lib/configurator/use-price-sync';
 import { MaterialTray } from './MaterialTray';
 import { PriceTicker } from './PriceTicker';
 import { AddToCartBar } from './AddToCartBar';
+import { CanvasBoundary } from './CanvasBoundary';
 import {
   hydrateMaterial,
   hydrateProduct,
@@ -32,7 +33,9 @@ function ConfiguratorBody({ title }: { title: string }) {
       <div className="configurator__stage">
         <h1 className="configurator__title">{title}</h1>
         <div className="canvas">
-          <ConfiguratorCanvas />
+          <CanvasBoundary>
+            <ConfiguratorCanvas />
+          </CanvasBoundary>
         </div>
       </div>
 
