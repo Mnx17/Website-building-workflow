@@ -1,0 +1,25 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 1200, "h": 2180, "title": "Foundations" },
+    { "file": "Components.dc.html", "x": 1320, "y": 0, "w": 1200, "h": 1760, "title": "Components" },
+    { "file": "Configurator.dc.html", "x": 0, "y": 2300, "w": 1440, "h": 900, "title": "Configurator — desktop, EN" },
+    { "file": "CheckoutArabic.dc.html", "x": 1560, "y": 2300, "w": 390, "h": 844, "title": "Checkout — phone, AR" }
+  ],
+  "annotations": [
+    {
+      "id": "contrast-rule",
+      "x": 0,
+      "y": -150,
+      "w": 620,
+      "text": "The one rule that changes the shipped app:\nwhite text fails WCAG AA on all four brand colours (1.23–2.48:1).\nEverything on a brand surface uses ink #2E2119 instead — 6.28:1 at worst.\nThe logo keeps its white lockup: it is large display lettering, not text."
+    },
+    {
+      "id": "assets-note",
+      "x": 1320,
+      "y": -150,
+      "w": 560,
+      "text": "Soft Marshmallow (the logo face) is not on Google Fonts, so it is not embedded here — the licensed file is needed for any display setting beyond the supplied logo artwork. Alexandria does all the text work and carries both scripts."
+    }
+  ],
+  "launch": { "view": "canvas" }
+}

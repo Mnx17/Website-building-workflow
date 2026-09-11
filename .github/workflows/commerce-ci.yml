@@ -1,0 +1,89 @@
+name: commerce-ci
+
+on:
+  push:
+    paths:
+      - 'apps/commerce/**'
+      - '.github/workflows/commerce-ci.yml'
+  pull_request:
+    paths:
+      - 'apps/commerce/**'
+      - '.github/workflows/commerce-ci.yml'
+
+defaults:
+  run:
+    working-directory: apps/commerce
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: commerce
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/commerce
+      # The mock provider signs and verifies webhooks through the same code
+      # path as Thawani, so the webhook route is exercised for real in CI
+      # without merchant credentials.
+      PAYMENT_PROVIDER: mock
+      MOCK_WEBHOOK_SECRET: mock-webhook-secret
+      # Admin routes verify HS256 JWTs against this; the suites mint their own.
+      SUPABASE_JWT_SECRET: test-jwt-secret-for-ci
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/commerce/package-lock.json
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm run test:unit
+
+      - name: Apply migrations and seed
+        run: npm run db:reset
+
+      - name: Integration tests
+        run: npm run test:integration
+
+      # Catches RSC/client boundary mistakes and bundler failures that neither
+      # tsc nor the test suites see.
+      - name: Production build
+        run: npm run build
+
+      - name: Install Chromium for Playwright
+        run: npx playwright install --with-deps chromium
+
+      # Runs against the production build above. This is the layer that caught
+      # an infinite render loop which typecheck, unit and integration tests all
+      # missed, because it only manifests during hydration in a real browser.
+      - name: E2E (gift checkout, en + ar, desktop + mobile)
+        run: npm run test:e2e
+        env:
+          ALLOW_MOCK_PAYMENTS: 'true'
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/commerce/playwright-report/
+          retention-days: 7

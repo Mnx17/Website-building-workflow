@@ -2,3 +2,6 @@ node_modules
 dist
 .generated
 
+
+# Seeded design-canvas output (regenerate with seed-canvas.mjs)
+design/**/candy-jar-design-system.html
