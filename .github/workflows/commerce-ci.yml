@@ -1,0 +1,58 @@
+name: commerce-ci
+
+on:
+  push:
+    paths:
+      - 'apps/commerce/**'
+      - '.github/workflows/commerce-ci.yml'
+  pull_request:
+    paths:
+      - 'apps/commerce/**'
+      - '.github/workflows/commerce-ci.yml'
+
+defaults:
+  run:
+    working-directory: apps/commerce
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: commerce
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/commerce
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/commerce/package-lock.json
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm run test:unit
+
+      - name: Apply migrations and seed
+        run: npm run db:reset
+
+      - name: Integration tests
+        run: npm run test:integration
