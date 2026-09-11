@@ -5,6 +5,7 @@
  */
 import { z } from 'zod';
 import { CONFIG_HASH_PATTERN } from './config-hash';
+import { giftDetailsSchema } from './gifting';
 
 export const uuidSchema = z.string().uuid();
 
@@ -80,6 +81,16 @@ export const createCartSchema = z.object({
   anon_token: z.string().min(16).max(128).optional(),
 });
 
+export const checkoutSessionSchema = z.object({
+  cart_id: uuidSchema,
+  /** Governorate name as seeded in `shipping_zones.governorates`. */
+  governorate: z.string().trim().min(2).max(80),
+  payment_method: z.enum(['card', 'cod']).default('card'),
+  locale: z.enum(['ar', 'en']).default('en'),
+  gift: giftDetailsSchema.optional(),
+});
+
 export type SlotMapInput = z.infer<typeof slotMapSchema>;
 export type PriceRequest = z.infer<typeof priceRequestSchema>;
 export type AddCartItem = z.infer<typeof addCartItemSchema>;
+export type CheckoutSessionRequest = z.infer<typeof checkoutSessionSchema>;

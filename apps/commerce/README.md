@@ -1,11 +1,12 @@
-# Sweets Commerce — P1 + P2
+# Sweets Commerce — P1 + P2 + P3
 
-Phases 1 and 2 of the [headless commerce implementation plan](../../docs/headless-commerce-implementation-plan.md):
+Phases 1–3 of the [headless commerce implementation plan](../../docs/headless-commerce-implementation-plan.md):
 
 - **P1** — PostgreSQL schema, inventory RPCs, cart/configuration API.
 - **P2** — 3D configurator, bilingual RTL storefront, cart handoff.
+- **P3** — checkout, payment webhooks, weight-based shipping, gifting.
 
-Checkout, payments, shipping and gifting are P3; the admin CMS is P4.
+The admin CMS and theme system are P4.
 
 ## Running it
 
@@ -146,17 +147,105 @@ database through to the components, so the swap to Draco+Meshopt GLBs via
 land, P2 is not visually complete** — the interaction, pricing and cart paths
 are.
 
+## Checkout, payments and gifting (P3)
+
+| Route | Purpose |
+|---|---|
+| `POST /api/checkout/session` | Recomputes totals from the cart, creates the order, returns a gateway URL (or nothing extra for COD). |
+| `POST /api/webhooks/:provider` | Verifies the signature, dedupes the event, commits stock. |
+| `GET /api/orders/:id/documents?type=` | `invoice` (priced) or `packing_slip` (price-free). Staff token required. |
+
+**Payment is behind an interface, not a Thawani import.** The merchant's
+acquiring options are not confirmed — Stripe cannot onboard an Omani entity —
+so `PaymentProvider` (`createSession`, `verifyWebhook`, `refund`) is what
+checkout depends on. MyFatoorah slots in as a second adapter without touching
+anything above it.
+
+**`PAYMENT_PROVIDER=mock`** signs and verifies through the same code path as
+Thawani, so the webhook route is fully exercised in CI. It is refused when
+`NODE_ENV=production` unless explicitly allowed, so a misconfigured deploy
+cannot accept unsigned "payments".
+
+### Webhook ordering
+
+The order of operations is the design:
+
+1. Read the **raw** body. `request.json()` first would change the bytes the
+   signature covers.
+2. Verify: timing-safe compare, timestamp window, hex or base64.
+3. Insert into `webhook_events (provider, event_id)`. A unique violation means
+   it is already handled → return 200. That is the replay guard.
+4. Only then mutate, with the status change and the stock commit in **one**
+   transaction.
+
+Anything already handled returns 200. A gateway that receives a 500 retries, so
+throwing on a duplicate retries forever.
+
+### Where rounding happens
+
+Once, on the order grand total, at checkout-session creation — never per line
+item. The delta is persisted in `orders.rounding_adjustment_baisa` and the
+`totals_reconcile` check constraint enforces
+`subtotal + shipping + vat + adjustment = total`. Cash on delivery skips
+rounding entirely: snapping to 10 baisa would make the driver's change wrong.
+
+### Gifting
+
+`hide_prices` governs **recipient-facing documents only**; the buyer always
+sees full prices.
+
+The guarantee is enforced by the **type**, not by a template remembering to
+omit a field. `PackingSlipDocument` has no price-shaped property anywhere in
+its shape, so a renderer cannot print one and a future edit cannot reintroduce
+one without a compile error. Tests assert the rendered output against a broad
+price-shaped pattern set in both locales — and assert that the same patterns
+*do* match the invoice, so the detector cannot silently rot.
+
+Blocked combinations: **gift + COD** (asking a recipient to pay for their own
+present is a support incident) and **gift + international** (customs legally
+requires a declared value, so the price-free slip cannot be the customs form).
+
+Gift messages are counted in **grapheme clusters** via `Intl.Segmenter` —
+`String.length` overcounts Arabic diacritics badly and would tell a customer
+their message is too long when it visibly is not. A flagged message is held for
+review, never silently edited.
+
+### Documents are HTML, not PDF — deliberately
+
+A PDF with Arabic needs an embedded font with real Arabic coverage. Rendering
+Arabic without one produces disconnected, reversed glyphs that look fine to a
+non-reader and are unusable to the recipient. Shipping that would be worse than
+shipping nothing. The document *model* is renderer-independent, so React-PDF
+slots in behind the same functions once a licensed Arabic face is vendored.
+Browser print-to-PDF handles Arabic correctly today, which covers fulfilment.
+
 ## Known gaps
 
 - **No GLB models.** The configurator runs on placeholder geometry (see above).
   This is the critical-path dependency for P2 being visually done.
+- **No live payment has ever been made.** The Thawani adapter's session shape
+  follows the published API, but the webhook signature header names and payload
+  envelope are **unverified against a real sandbox** — no merchant credentials
+  exist yet. Both are isolated in `parseWebhookBody` and the header constants;
+  confirm them during onboarding. The signature verification itself (raw body,
+  timing-safe, timestamp window) is provider-independent and correct.
 - **No browser-level tests.** The interaction rules are covered by 21 store
-  unit tests, but nothing drives a real pointer over a real canvas; Playwright
-  arrives with the P3 gift-checkout suite.
+  unit tests and the checkout flow by route-handler integration tests, but
+  nothing drives a real pointer over a real canvas or a real browser through
+  checkout. Playwright is still outstanding.
+- **Document access is a shared staff token**, not a role check. When Supabase
+  Auth lands in P4 this becomes `has_role('{admin,fulfillment}')` plus
+  buyer-owns-order, and the token goes away.
+- **`reservation_lost` is logged, not handled.** If a hold lapses before
+  payment confirms, the customer is charged and the order stands, but nothing
+  yet routes it to a human. P4 needs an admin queue for it.
 - No authentication yet. Carts are anonymous; `staff_users` and the RLS
   policies are in place but nothing populates `auth.uid()` (P4).
 - Route Handlers have no rate limiting. `POST /api/cart` is an unauthenticated
   insert, and `POST /api/configurations/price` is callable at will.
 - Cart line quantities can be added but not edited; only whole-line removal is
   wired.
-- Shipping rates are seeded and constrained but the calculator itself is P3.
+- No confirmation emails. The gifting rules define which template each
+  recipient gets, but no mail transport is wired.
+- No checkout UI. P3 ships the API and the rules; the storefront still needs
+  the address/gift form that calls `POST /api/checkout/session`.

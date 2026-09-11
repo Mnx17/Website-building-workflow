@@ -33,6 +33,12 @@ jobs:
 
     env:
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/commerce
+      # The mock provider signs and verifies webhooks through the same code
+      # path as Thawani, so the webhook route is exercised for real in CI
+      # without merchant credentials.
+      PAYMENT_PROVIDER: mock
+      MOCK_WEBHOOK_SECRET: mock-webhook-secret
+      STAFF_API_TOKEN: test-staff-token
 
     steps:
       - uses: actions/checkout@v4

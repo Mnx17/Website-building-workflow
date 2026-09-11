@@ -33,6 +33,23 @@ const STATUS_BY_CODE: Record<string, number> = {
   ILLEGAL_TRANSITION: 409,
   HASH_MISMATCH: 422,
   PRICE_MISMATCH: 409,
+
+  // Checkout / shipping / gifting. These are business rules, not faults —
+  // returning 500 for them tells the shopper "something went wrong" when the
+  // truthful answer is "cash on delivery isn't available for gifts".
+  EMPTY_CART: 422,
+  COD_NOT_AVAILABLE: 409,
+  NO_RATE_BAND: 422,
+  ZONES_WITHOUT_TOP_BAND: 500,
+  GIFT_COD_NOT_ALLOWED: 422,
+  GIFT_INTERNATIONAL_NEEDS_CUSTOMS: 422,
+  LINE_TOTAL_MISMATCH: 500,
+  THAWANI_NOT_CONFIGURED: 503,
+  THAWANI_SESSION_FAILED: 502,
+  THAWANI_SESSION_MISSING_ID: 502,
+  THAWANI_REFUND_FAILED: 502,
+  MOCK_PROVIDER_FORBIDDEN_IN_PRODUCTION: 500,
+  UNKNOWN_PAYMENT_PROVIDER: 500,
 };
 
 const MESSAGES: Record<string, string> = {
@@ -42,6 +59,15 @@ const MESSAGES: Record<string, string> = {
   REQUIRED_SLOT_EMPTY: 'A required slot is still empty.',
   HASH_MISMATCH: 'This build could not be verified. Please rebuild it.',
   PRICE_MISMATCH: 'Prices changed while you were building. Please review.',
+  EMPTY_CART: 'Your cart is empty.',
+  COD_NOT_AVAILABLE: 'Cash on delivery is not available for this area.',
+  NO_RATE_BAND: 'We could not calculate shipping for this order. Please contact us.',
+  GIFT_COD_NOT_ALLOWED:
+    'Cash on delivery is not available for gifts — the recipient would be asked to pay. Please pay by card.',
+  GIFT_INTERNATIONAL_NEEDS_CUSTOMS:
+    'International gift delivery needs a customs declaration showing the value. Please contact us to arrange it.',
+  THAWANI_NOT_CONFIGURED: 'Card payment is temporarily unavailable.',
+  THAWANI_SESSION_FAILED: 'Card payment is temporarily unavailable.',
 };
 
 const DOMAIN_CODE = /^([A-Z_]+)(?::(.*))?$/;
